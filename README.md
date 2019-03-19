@@ -655,8 +655,4 @@ mysql> insert into orders(`id`,`orderNo`,`status`) values(1,"00001",'0');
 mysql> insert into orders(`id`,`orderNo`,`status`) values(2,"00002",'1');
 mysql> insert into orders(`id`,`orderNo`,`status`) values(3,"00003",'0');
 
-
-
-
 ```  
-ysql
