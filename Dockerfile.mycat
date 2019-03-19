@@ -48,5 +48,5 @@ VOLUME /opt/mycat/conf
 EXPOSE 8066 9066
 
 # run mycat
-ENTRYPOINT ["/bin/tini", "--"]
-CMD ["/opt/mycat/bin/mycat", "start"]
+# ENTRYPOINT ["/bin/tini", "--"]
+CMD ["/opt/mycat/bin/mycat", "console"]
