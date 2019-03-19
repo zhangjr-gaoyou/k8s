@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mycatweb-deployment
+  labels:
+    app: mycatweb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mycatweb
+  template:
+    metadata:
+      labels:
+        app: mycatweb
+    spec:
+      containers:
+      - name: mycat-web
+        image: mycat-web:1.0
+        ports:
+        - containerPort: 8082

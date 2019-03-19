@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mycat
+  namespace: db
+  labels:
+    app: mycat
+data:
+  server.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE mycat:server SYSTEM "server.dtd">
+    <mycat:server xmlns:mycat="http://io.mycat/">
+      <system>
+        <property name="defaultSqlParser">druidparser</property>
+        <property name="useGlobleTableCheck">0</property>  <!-- 1为开启全加班一致性检测、0为关闭 -->
+      </system>
+      <user name="root">
+        <property name="password">pass1234</property>
+        <property name="schemas">TESTDB</property>
+      </user>
+    </mycat:server>
+  schema.xml: |
+    <?xml version="1.0"?>
+    <!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+    <mycat:schema xmlns:mycat="http://io.mycat/">
+     <schema name="TESTDB" checkSQLschema="false" sqlMaxLimit="100">
+        <table name="orders" dataNode="dn1,dn2" rule="mod-long" />
+        <table name="books" primaryKey="id" type="global" dataNode="dn1,dn2" />
+      </schema>
+      <dataNode name="dn1" dataHost="mysql-set1" database="mysql" />
+      <dataNode name="dn2" dataHost="mysql-set2" database="mysql" />
+      <dataHost name="mysql-set1" maxCon="1000" minCon="10" balance="0"
+        writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+        <heartbeat>select user()</heartbeat>
+        <writeHost host="mysql-set1-0.myset1" url="mysql-set1-0.mysqlset1:3306" user="root"
+          password="pass1234">
+        </writeHost>
+      </dataHost>
+      <dataHost name="mysql-set2" maxCon="1000" minCon="10" balance="0"
+        writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+        <heartbeat>select user()</heartbeat>
+        <writeHost host="mysql-set2-0.myset2" url="mysql-set2-0.mysqlset2:3306" user="root"
+          password="pass1234">
+        </writeHost>
+      </dataHost>
+    </mycat:schema>
+  rule.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE mycat:rule SYSTEM "rule.dtd">
+    <mycat:rule xmlns:mycat="http://io.mycat/">
+      <tableRule name="mod-long">
+        <rule>
+            <columns>id</columns>
+            <algorithm>mod-long</algorithm>
+        </rule>
+      </tableRule>
+      <function name="mod-long" class="io.mycat.route.function.PartitionByMod">
+        <!-- how many data nodes -->
+        <property name="count">2</property>
+      </function>
+    </mycat:rule>

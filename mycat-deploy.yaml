@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mycat-deployment
+  namespace: db
+  labels:
+    app: mycat
+spec:
+  selector:
+    matchLabels:
+      app: mycat
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mycat
+    spec:
+      imagePullSecrets:
+      - name: myregistrykey
+      initContainers:
+      - name: init-mycat
+        image: mycat:1.6
+        command:
+        - bash
+        - "-c"
+        - |
+          set -ex
+            cp -R /opt/mycat/conf/* /mnt/conf
+            cp /mnt/config-map/server.xml /mnt/conf/
+            cp /mnt/config-map/schema.xml /mnt/conf/
+            cp /mnt/config-map/rule.xml /mnt/conf/
+        volumeMounts:
+        - mountPath: /mnt/config-map
+          name: config-map
+        - mountPath: /mnt/conf
+          name: conf
+      containers:
+      - name: mycat
+        image: mycat:1.6
+        ports:
+        - name: data
+          containerPort: 8066
+        - name: admin
+          containerPort: 9066
+        volumeMounts:
+        - mountPath: /opt/mycat/conf
+          name: conf
+        resources:
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      volumes:
+      - name: conf
+        emptyDir: {}
+      - name: config-map
+        configMap:
+          name: mycat
