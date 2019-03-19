@@ -1,0 +1,52 @@
+FROM centos:7
+
+
+USER root
+
+# install java
+
+ENV JAVA_VERSION=8 \
+    JAVA_UPDATE=201 \
+    JAVA_BUILD=09 \
+    JAVA_PATH=42970487e3af4f5aa5bca3f542482c60 \
+    JAVA_HOME="/usr/lib/jvm/default-jvm"
+
+RUN yum install -y wget ca-certificates unzip && \
+    cd "/tmp" && \
+    wget --header "Cookie: oraclelicense=accept-securebackup-cookie;" \
+        "http://download.oracle.com/otn-pub/java/jdk/${JAVA_VERSION}u${JAVA_UPDATE}-b${JAVA_BUILD}/${JAVA_PATH}/jdk-${JAVA_VERSION}u${JAVA_UPDATE}-linux-x64.tar.gz" && \
+    tar -xzf "jdk-${JAVA_VERSION}u${JAVA_UPDATE}-linux-x64.tar.gz" && \
+    mkdir -p "/usr/lib/jvm" && \
+    mv "/tmp/jdk1.${JAVA_VERSION}.0_${JAVA_UPDATE}" "/usr/lib/jvm/java-${JAVA_VERSION}-oracle" && \
+    ln -s "java-${JAVA_VERSION}-oracle" "$JAVA_HOME" && \
+    ln -s "$JAVA_HOME/bin/"* "/usr/bin/" && \
+    rm -rf "$JAVA_HOME/"*src.zip && \
+    wget --header "Cookie: oraclelicense=accept-securebackup-cookie;" \
+        "http://download.oracle.com/otn-pub/java/jce/${JAVA_VERSION}/jce_policy-${JAVA_VERSION}.zip" && \
+    unzip -jo -d "${JAVA_HOME}/jre/lib/security" "jce_policy-${JAVA_VERSION}.zip" && \
+    rm -f "${JAVA_HOME}/jre/lib/security/README.txt"
+
+# install tini
+
+ENV TINI_VERSION 0.14.0
+ENV TINI_SHA 6c41ec7d33e857d4779f14d9c74924cab0c7973485d2972419a3b7c7620ff5fd
+
+# Use tini as subreaper in Docker container to adopt zombie processes
+RUN curl -fsSL https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini-static-amd64 -o /bin/tini && chmod +x /bin/tini \
+  && echo "$TINI_SHA  /bin/tini" | sha256sum -c -
+
+
+# install mycat
+
+RUN cd "/tmp" && \
+    wget http://dl.mycat.io/1.6-RELEASE/Mycat-server-1.6-RELEASE-20161028204710-linux.tar.gz && \
+    tar -xzf "Mycat-server-1.6-RELEASE-20161028204710-linux.tar.gz" && \
+    mv /tmp/mycat /opt/mycat
+
+
+VOLUME /opt/mycat/conf
+EXPOSE 8066 9066
+
+# run mycat
+ENTRYPOINT ["/bin/tini", "--"]
+CMD ["/opt/mycat/bin/mycat", "start"]
