@@ -1,0 +1,1 @@
+kubectl exec -it redis-cluster-0 --namespace db2 -- redis-cli --cluster create --cluster-replicas 1 $(kubectl get pods --namespace db2 -l app=redis-cluster -o jsonpath='{range.items[*]}{.status.podIP}:6379 ')
